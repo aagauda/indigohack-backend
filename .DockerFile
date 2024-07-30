@@ -22,8 +22,8 @@ RUN yum update -qq && \
     yum install -y python-is-python3 pkg-config build-essential 
 
 # Install node modules
-COPY --link package-lock.json package.json ./
-RUN npm ci --include=dev
+# COPY --link package-lock.json package.json ./ 
+RUN npm install
 
 # Copy application code
 COPY --link . .
