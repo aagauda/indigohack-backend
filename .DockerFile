@@ -18,8 +18,8 @@ ENV NODE_ENV=production
 FROM base as build
 
 # Install packages needed to build node modules
-RUN apt-get update -qq && \
-    apt-get install -y python-is-python3 pkg-config build-essential 
+RUN yum update -qq && \
+    yum install -y python-is-python3 pkg-config build-essential 
 
 # Install node modules
 COPY --link package-lock.json package.json ./
@@ -29,7 +29,8 @@ RUN npm ci --include=dev
 COPY --link . .
 
 # Generate prisma schema
-RUN npm run prisma:generate
+RUN npm npm install -g @nestjs/cli
+
 
 
 # Build application
