@@ -1,26 +1,50 @@
-# Use the official Node.js image from the Docker Hub
-FROM node:alpine3.10
+# syntax = docker/dockerfile:1
 
-# Create a directory for the app inside the container
-RUN mkdir /app
+# Adjust NODE_VERSION as desired
+ARG NODE_VERSION=18.12.1
+FROM node:${NODE_VERSION}-slim as base
 
-# Set the working directory
+
+LABEL fly_launch_runtime="NestJS"
+
+# NestJS app lives here
 WORKDIR /app
 
-# Copy package.json and package-lock.json (if available) to the working directory
-COPY package*.json /app/
+# Set production environment
+ENV NODE_ENV=production
 
-# Install dependencies
-RUN npm install
 
-# Install the Nest CLI globally
-RUN npm install -g @nestjs/cli
+# Throw-away build stage to reduce size of final image
+FROM base as build
 
-# Copy the rest of the application code to the working directory
-COPY . /app
+# Install packages needed to build node modules
+RUN apt-get update -qq && \
+    apt-get install -y python-is-python3 pkg-config build-essential 
 
-# Expose the port the app runs on
+# Install node modules
+COPY --link package-lock.json package.json ./
+RUN npm ci --include=dev
+
+# Copy application code
+COPY --link . .
+
+# Generate prisma schema
+RUN npm run prisma:generate
+
+
+# Build application
+RUN npm run build
+
+
+# Run tests
+RUN npm run test
+
+# Final stage for app image
+FROM base
+
+# Copy built application
+COPY --from=build /app /app
+
+# Start the server by default, this can be overwritten at runtime
 EXPOSE 3000
-
-# Start the application using the Nest CLI
-CMD ["nest", "start"]
+CMD [ "npm", "run", "start:migrate:prod" ]
