@@ -17,9 +17,9 @@ ENV NODE_ENV=production
 # Throw-away build stage to reduce size of final image
 FROM base as build
 
-# Install packages needed to build node modules
-RUN yum update -qq && \
-    yum install -y python-is-python3 pkg-config build-essential 
+# # Install packages needed to build node modules
+# RUN yum update -qq && \
+#     yum install -y python-is-python3 pkg-config build-essential 
 
 # Install node modules
 # COPY --link package-lock.json package.json ./ 
