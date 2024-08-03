@@ -14,6 +14,7 @@ export class FlightsController {
 
   @Get()
   async findAll() {
+    console.log("thi is called")
     return this.flightsService.findAll();
   }
 
@@ -23,7 +24,8 @@ export class FlightsController {
     @Query('to') to: string,
     @Query('travel_date') travelDate: string
   ): Promise<Flight[]> {
-    return await this.flightsService.searchFlight(from, to, travelDate);
+    return await this.flightsService.textSearch(to);
+    // return await this.flightsService.searchFlight(from, to, travelDate);
   }
 
   @Get(':id')
@@ -49,6 +51,16 @@ export class FlightsController {
     }
     return updatedFlight;
   }
+
+  @Get('textsearch')
+  async textSearch(
+    @Query('to') to: string,
+  ) {
+    console.log(to)
+    return await this.flightsService.textSearch(to);
+  }
+
+
 
 
 

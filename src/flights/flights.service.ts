@@ -37,7 +37,7 @@ const flightData = [
     departure_gate: "C3",
     arrival_gate: "D4",
     from: "Mumbai",
-    to: "Delhi",
+    to: "Denmark",
     travel_date: "2024-08-03T16:00:00Z",
     scheduled_departure: "2024-08-03T16:00:00Z",
     scheduled_arrival: "2024-08-03T20:00:00Z",
@@ -57,7 +57,7 @@ const flightData = [
     departure_gate: "E2",
     arrival_gate: "F1",
     from: "Bangalore",
-    to: "Chennai",
+    to: "Dehradun",
     travel_date: "2024-08-03T12:00:00Z",
     scheduled_departure: "2024-08-03T12:00:00Z",
     scheduled_arrival: "2024-08-03T16:00:00Z",
@@ -309,6 +309,15 @@ export class FlightsService {
   async cleanUpExpiredNotifications() {
     await this.notificationsService.deleteExpiredNotifications();
     console.log('----------Expired notifications cleaned up');
+  }
+
+
+  async textSearch(to: string){
+    console.log(to)
+    let Data= await this.flightModel.find({ to: { $regex: to, $options: 'i' } }).exec();
+
+    console.log(Data)
+    return Data;
   }
 
 
