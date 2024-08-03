@@ -8,12 +8,12 @@ import { AuthGuard } from 'src/Guards/auth.gaurd';
 @UseGuards(AuthGuard)
 @Controller('bookings')
 export class BookingsController {
-  constructor(private readonly bookingsService: BookingsService) {}
+  constructor(private readonly bookingsService: BookingsService) { }
 
   @Post()
-  async create(@Request() req,@Body() booking: CreateBookingDto) {
-    let sessionUser=req.user;
-    return this.bookingsService.createBooking(booking,sessionUser.id);
+  async create(@Request() req, @Body() booking: CreateBookingDto) {
+    let sessionUser = req.user;
+    return this.bookingsService.createBooking(booking, sessionUser.id);
   }
 
   @Get()
@@ -31,10 +31,11 @@ export class BookingsController {
     return this.bookingsService.findUserBooking(id);
   }
 
-  
+
 
   @Put(':id')
-  async update(@Param('id') id: string, @Body() booking: Booking) {
-    return this.bookingsService.update(id, booking);
+  async update(@Request() req, @Param('id') id: string, @Body() body: {status:string}) {
+    const userId = req.user.id;
+    return await this.bookingsService.update(id,userId, body.status);
   }
 }

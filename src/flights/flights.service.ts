@@ -7,43 +7,68 @@ import { User, UserDocument } from '../schemas/user.schema';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Booking, BookingDocument } from 'src/schemas/booking.schema';
-const nodemailer=require("nodemailer")
+const nodemailer = require("nodemailer")
 
 const flightData = [
   {
+    id: 1,
     flight_id: "6E 2341",
     airline: "Indigo",
     status: "On Time",
     departure_gate: "A12",
     arrival_gate: "B7",
-    scheduled_departure: new Date("2024-07-26T14:00:00Z"),
-    scheduled_arrival: new Date("2024-07-26T18:00:00Z"),
+    from: "Delhi",
+    to: "Mumbai",
+    travel_date: "2024-08-03T14:00:00Z",
+    scheduled_departure: "2024-08-03T14:00:00Z",
+    scheduled_arrival: "2024-08-03T18:00:00Z",
     actual_departure: null,
-    actual_arrival: null
+    actual_arrival: null,
+    booking_amount: [
+      { type: "premium", amount: 1500 },
+      { type: "standard", amount: 1000 }
+    ]
   },
   {
+    id: 2,
     flight_id: "6E 2342",
     airline: "Indigo",
     status: "Delayed",
     departure_gate: "C3",
     arrival_gate: "D4",
-    scheduled_departure: new Date("2024-07-26T16:00:00Z"),
-    scheduled_arrival: new Date("2024-07-26T20:00:00Z"),
+    from: "Mumbai",
+    to: "Delhi",
+    travel_date: "2024-08-03T16:00:00Z",
+    scheduled_departure: "2024-08-03T16:00:00Z",
+    scheduled_arrival: "2024-08-03T20:00:00Z",
     actual_departure: null,
-    actual_arrival: null
+    actual_arrival: null,
+    booking_amount: [
+      { type: "premium", amount: 3000 },
+      { type: "premium_economy", amount: 2500 },
+      { type: "standard", amount: 2000 }
+    ]
   },
   {
+    id: 3,
     flight_id: "6E 2343",
     airline: "Indigo",
     status: "Cancelled",
     departure_gate: "E2",
     arrival_gate: "F1",
-    scheduled_departure: new Date("2024-07-26T12:00:00Z"),
-    scheduled_arrival: new Date("2024-07-26T16:00:00Z"),
+    from: "Bangalore",
+    to: "Chennai",
+    travel_date: "2024-08-03T12:00:00Z",
+    scheduled_departure: "2024-08-03T12:00:00Z",
+    scheduled_arrival: "2024-08-03T16:00:00Z",
     actual_departure: null,
-    actual_arrival: null
+    actual_arrival: null,
+    booking_amount: [
+      { type: "premium", amount: 5000 }
+    ]
   }
 ];
+
 
 const statuses = ["On Time", "Delayed", "Cancelled"];
 const departureGates = ["A12", "C3", "E2"];
@@ -69,6 +94,17 @@ export class FlightsService {
     return await this.flightModel.find().exec();
   }
 
+  async searchFlight(from: string, to: string, travelDate: string): Promise<Flight[]> {
+    const parsedTravelDate = new Date(travelDate);
+
+    return await this.flightModel.find({
+      from: from,
+      to: to,
+      travel_date: { $gte: parsedTravelDate, $lt: new Date(parsedTravelDate.getTime() + 24 * 60 * 60 * 1000) }
+    }).exec();
+  }
+
+
   async findOne(id: string): Promise<Flight> {
     return this.flightModel.findOne({ flight_id: id }).exec();
   }
@@ -76,28 +112,28 @@ export class FlightsService {
   async update(id: string, flight: Flight) {
     // Step 1: Find and update the flight
     const response = await this.flightModel.findOneAndUpdate(
-        { flight_id: id },
-        flight,
-        { new: true }
+      { flight_id: id },
+      flight,
+      { new: true }
     ).exec();
 
     if (!response) {
-        throw new Error('Flight not found');
+      throw new Error('Flight not found');
     }
 
     // Step 2: Find all bookings for the flight ID
     const bookings = await this.bookingModel.find({ flight_id: id })
-        .populate('user')
-        .exec();
+      .populate('user')
+      .exec();
 
     // Extract email addresses and phone numbers from populated users
     const userDetails = bookings
-        .map(booking => booking.user)
-        .filter(user => user != null)
-        .map(user => ({
-            email: (user as any).email,
-            phone: (user as any).phone // Adjust property name as needed
-        }));
+      .map(booking => booking.user)
+      .filter(user => user != null)
+      .map(user => ({
+        email: (user as any).email,
+        phone: (user as any).phone // Adjust property name as needed
+      }));
 
     // Extract arrays of emails
     const emailAddresses = userDetails.map(details => details.email);
@@ -106,18 +142,18 @@ export class FlightsService {
     let message: string;
 
     switch (response.status) {
-        case 'On Time':
-            message = `Your flight ${response.flight_id} is on time. Departure gate: ${response.departure_gate}.`;
-            break;
-        case 'Delayed':
-            message = `Your flight ${response.flight_id} is delayed. New departure time: ${response.scheduled_departure.toISOString()}. Departure gate: ${response.departure_gate}.`;
-            break;
-        case 'Cancelled':
-            message = `Your flight ${response.flight_id} has been cancelled.`;
-            break;
-        default:
-            message = `Your flight ${response.flight_id} status is ${response.status}.`;
-            break;
+      case 'On Time':
+        message = `Your flight ${response.flight_id} is on time. Departure gate: ${response.departure_gate}.`;
+        break;
+      case 'Delayed':
+        message = `Your flight ${response.flight_id} is delayed. New departure time: ${response.scheduled_departure.toISOString()}. Departure gate: ${response.departure_gate}.`;
+        break;
+      case 'Cancelled':
+        message = `Your flight ${response.flight_id} has been cancelled.`;
+        break;
+      default:
+        message = `Your flight ${response.flight_id} status is ${response.status}.`;
+        break;
     }
 
     // Compose email content
@@ -126,46 +162,47 @@ export class FlightsService {
 
     // Send email notifications to all users
     for (const email of emailAddresses) {
-        await this.sendEmail(email, subject, text);
+      await this.sendEmail(email, subject, text);
     }
 
     return response;
-}
+  }
 
-// Function to send an email
-async sendEmail(to: string, subject: string, text: string) {
+  // Function to send an email
+  async sendEmail(to: string, subject: string, text: string) {
     // Create a transporter object using SMTP transport
     const transporter = nodemailer.createTransport({
-        service: 'Gmail', // or use another email service provider
-        auth: {
-            user: process.env.mail, // your email address
-            pass: process.env.email_password, // your email password or an app-specific password
-        },
+      service: 'Gmail', // or use another email service provider
+      auth: {
+        user: process.env.mail, // your email address
+        pass: process.env.email_password, // your email password or an app-specific password
+      },
     });
 
     try {
-        // Set up email data
-        const mailOptions = {
-            from: process.env.mail, // sender address
-            to:to, // list of receivers
-            subject: subject, // Subject line
-            text: text, // plain text body
-        };
+      // Set up email data
+      const mailOptions = {
+        from: process.env.mail, // sender address
+        to: to, // list of receivers
+        subject: subject, // Subject line
+        text: text, // plain text body
+      };
 
-        // Send email
-        const info = await transporter.sendMail(mailOptions);
+      // Send email
+      const info = await transporter.sendMail(mailOptions);
 
-        console.log('Email sent: ' + info.response);
+      console.log('Email sent: ' + info.response);
     } catch (error) {
-        console.error('Error sending email:', error);
+      console.error('Error sending email:', error);
     }
-}
+  }
 
 
 
 
-  async insertPredefinedFlights(): Promise<Flight[]> {
-    return this.flightModel.insertMany(flightData);
+  async insertPredefinedFlights() {
+    let insertedFlights = await this.flightModel.insertMany(flightData);
+    return insertedFlights;
   }
 
   private getRandomElement(array: any[]): any {

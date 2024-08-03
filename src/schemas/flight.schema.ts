@@ -1,6 +1,7 @@
 // src/schemas/flight.schema.ts
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document } from 'mongoose';
+import { BookingAmount, BookingAmountSchema } from './booking.schema';
 
 export type FlightDocument = Flight & Document;
 
@@ -12,6 +13,15 @@ export class Flight {
 
   @Prop({ required: true })
   airline: string;
+
+  @Prop({ required: false })
+  to: string;
+
+  @Prop({require: false})
+  from: string;
+
+  @Prop({ required: false })
+  travel_date: Date;
 
   @Prop({ required: true })
   status: string;
@@ -33,6 +43,12 @@ export class Flight {
 
   @Prop()
   actual_arrival: Date;
+
+  @Prop({ type: [BookingAmountSchema], required: true })
+  booking_amount: BookingAmount[]; // Array of BookingAmount subdocuments
+
+
+
 }
 
 export const FlightSchema = SchemaFactory.createForClass(Flight);

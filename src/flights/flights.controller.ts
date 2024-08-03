@@ -1,11 +1,11 @@
 // src/flights/flights.controller.ts
-import { Controller, Get, Post, Body, Param, Put,NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, NotFoundException, Query } from '@nestjs/common';
 import { FlightsService } from './flights.service';
 import { Flight } from '../schemas/flight.schema';
 
 @Controller('flights')
 export class FlightsController {
-  constructor(private readonly flightsService: FlightsService) {}
+  constructor(private readonly flightsService: FlightsService) { }
 
   @Post()
   async create() {
@@ -15,6 +15,15 @@ export class FlightsController {
   @Get()
   async findAll() {
     return this.flightsService.findAll();
+  }
+
+  @Get('search')
+  async searchFlights(
+    @Query('from') from: string,
+    @Query('to') to: string,
+    @Query('travel_date') travelDate: string
+  ): Promise<Flight[]> {
+    return await this.flightsService.searchFlight(from, to, travelDate);
   }
 
   @Get(':id')

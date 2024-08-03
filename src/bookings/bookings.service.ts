@@ -73,7 +73,13 @@ export class BookingsService {
     return bookingDetails;
   }
 
-  async update(id: string, booking: Booking): Promise<Booking> {
-    return this.bookingModel.findOneAndUpdate({ booking_id: id }, booking, { new: true }).exec();
+  async update(id: string, userId: string, status: string) {
+    return await this.bookingModel.findOneAndUpdate(
+      { _id: id},
+      { status: status },
+      { new: true }
+    ).exec();
   }
+
+  
 }
